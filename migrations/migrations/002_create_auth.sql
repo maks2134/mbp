@@ -1,7 +1,7 @@
 CREATE TABLE auth (
-                      id SERIAL PRIMARY KEY,
-                      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                      email TEXT UNIQUE NOT NULL,
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        email TEXT UNIQUE NOT NULL,
                       password_hash TEXT NOT NULL,
                       last_login_at TIMESTAMP NULL,
                       failed_attempts INT NOT NULL DEFAULT 0,

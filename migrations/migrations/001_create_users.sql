@@ -24,3 +24,9 @@ CREATE TRIGGER trigger_set_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at_timestamp();
+
+ALTER TABLE users
+    ADD COLUMN username TEXT UNIQUE NOT NULL DEFAULT '',
+    ADD COLUMN password_hash TEXT NOT NULL DEFAULT '',
+    ADD COLUMN email TEXT UNIQUE,
+    ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
