@@ -1,0 +1,13 @@
+services:
+  postgres:
+    container_name: postgres-mpb
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: mpb
+      POSTGRES_PASSWORD: mpb_pas
+      POSTGRES_DB: mpb_db
+      PGDATA: /data/postgres_mpb
+    volumes:
+      - ./postgres-data_mpb:/data/postgres
+    ports:
+      - "5432:5432"
