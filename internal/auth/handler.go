@@ -3,14 +3,15 @@ package auth
 import "github.com/gofiber/fiber/v2"
 
 type AuthHandlers struct {
-	AuthRepository *AuthRepository
+	AuthService *AuthService
 }
 
-func NewAuthHandlers(authRepository *AuthRepository) *AuthHandlers {
-	return &AuthHandlers{AuthRepository: authRepository}
+func NewAuthHandlers(authService *AuthService) *AuthHandlers {
+	return &AuthHandlers{AuthService: authService}
 }
 
 func (handler *AuthHandlers) Login(c *fiber.Ctx) error {
+
 	return c.JSON(fiber.Map{})
 }
 

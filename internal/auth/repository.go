@@ -1,11 +1,15 @@
 package auth
 
 import (
+	"database/sql"
+	"errors"
 	_ "errors"
-	"golang.org/x/crypto/bcrypt"
 	"mpb/configs"
+	model "mpb/internal/user"
 	"mpb/pkg/db"
 	"mpb/pkg/errors_constant"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthRepository struct {
@@ -41,8 +45,25 @@ func (repo *AuthRepository) Register(username, password, email string) error {
 	return err
 }
 
-func (repo *AuthRepository) Login(username, password string) (string, error) {
-	var exists bool
-	var hashed string
+func (repo *AuthRepository) Login(username, password string) (*model.User, error) {
+	user, _ := repo.FindByUsername(username)
 
+	err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
+		return nil, errors_constant.UserAuthenticationFailed
+	}
+
+	return user, nil
+}
+
+func (repo *AuthRepository) FindByUsername(username string) (*model.User, error) {
+	var user *model.User
+	err := repo.db.Db.Get(&user, `SELECT * FROM users WHERE username = $1 AND deleted_at IS NULL`, username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors_constant.UserNotFound
+		}
+	}
+
+	return user, nil
 }

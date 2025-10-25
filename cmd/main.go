@@ -20,8 +20,11 @@ func main() {
 	// блок репозиториев
 	authRepository := auth.NewAuthRepository(conf, database)
 
+	// блок сервисов
+	authService := auth.NewAuthService(authRepository)
+
 	// блок хэндлеров
-	authHandler := auth.NewAuthHandlers(authRepository)
+	authHandler := auth.NewAuthHandlers(authService)
 
 	// блок роутов
 	api := app.Group("/api")
