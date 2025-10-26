@@ -1,29 +1,43 @@
 package configs
 
 import (
-	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
-	Db DbConfig
+type JWTConfig struct {
+	SecretKey      string
+	AccessTokenTTL time.Duration
 }
 
 type DbConfig struct {
 	Dsn string
 }
 
+type Config struct {
+	Db  DbConfig
+	JWT JWTConfig
+}
+
 func LoadConfig() *Config {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Println("Error loading .env file, using defaults config.")
+	_ = godotenv.Load(".env")
+
+	ttl := 24 * time.Hour
+	if v := os.Getenv("JWT_TTL"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			ttl = d
+		}
 	}
 
 	return &Config{
 		Db: DbConfig{
 			Dsn: os.Getenv("DSN"),
+		},
+		JWT: JWTConfig{
+			SecretKey:      os.Getenv("JWT_SECRET"),
+			AccessTokenTTL: ttl,
 		},
 	}
 }

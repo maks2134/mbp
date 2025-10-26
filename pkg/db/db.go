@@ -8,7 +8,7 @@ import (
 )
 
 type Db struct {
-	Db *sqlx.DB
+	Conn *sqlx.DB
 }
 
 func NewDb(conf *configs.Config) *Db {
@@ -17,7 +17,5 @@ func NewDb(conf *configs.Config) *Db {
 		panic(err)
 	}
 
-	defer db.Close()
-
-	return &Db{db}
+	return &Db{Conn: db}
 }

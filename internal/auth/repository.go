@@ -3,13 +3,10 @@ package auth
 import (
 	"database/sql"
 	"errors"
-	_ "errors"
 	"mpb/configs"
 	model "mpb/internal/user"
 	"mpb/pkg/db"
 	"mpb/pkg/errors_constant"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthRepository struct {
@@ -17,16 +14,16 @@ type AuthRepository struct {
 	db     *db.Db
 }
 
-func NewAuthRepository(config *configs.Config, db *db.Db) *AuthRepository {
+func NewAuthRepository(config *configs.Config, database *db.Db) *AuthRepository {
 	return &AuthRepository{
 		config: config,
-		db:     db,
+		db:     database,
 	}
 }
 
-func (repo *AuthRepository) Register(username, password, email string) error {
+func (repo *AuthRepository) Register(username, passwordHash, email, name string, age int) error {
 	var exists bool
-	err := repo.db.Db.Get(&exists, `SELECT EXISTS (SELECT 1 FROM users WHERE username = $1)`, username)
+	err := repo.db.Conn.Get(&exists, `SELECT EXISTS (SELECT 1 FROM users WHERE username = $1)`, username)
 	if err != nil {
 		return err
 	}
@@ -34,36 +31,21 @@ func (repo *AuthRepository) Register(username, password, email string) error {
 		return errors_constant.UserAlreadyExists
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
-	_, err = repo.db.Db.Exec(`INSERT INTO users (username, password_hash, email)
-	VALUES ($1, $2, $3)`, username, string(hashed), email)
-
+	_, err = repo.db.Conn.Exec(
+		`INSERT INTO users (username, password_hash, email, name, age, is_active) VALUES ($1,$2,$3,$4,$5, TRUE)`,
+		username, passwordHash, email, name, age,
+	)
 	return err
 }
 
-func (repo *AuthRepository) Login(username, password string) (*model.User, error) {
-	user, _ := repo.FindByUsername(username)
-
-	err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
-	if err != nil {
-		return nil, errors_constant.UserAuthenticationFailed
-	}
-
-	return user, nil
-}
-
 func (repo *AuthRepository) FindByUsername(username string) (*model.User, error) {
-	var user *model.User
-	err := repo.db.Db.Get(&user, `SELECT * FROM users WHERE username = $1 AND deleted_at IS NULL`, username)
+	var user model.User
+	err := repo.db.Conn.Get(&user, `SELECT * FROM users WHERE username = $1 AND deleted_at IS NULL`, username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors_constant.UserNotFound
 		}
+		return nil, err
 	}
-
-	return user, nil
+	return &user, nil
 }
