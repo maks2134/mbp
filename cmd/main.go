@@ -1,14 +1,21 @@
 package main
 
 import (
-	"log"
 	"mpb/configs"
+	_ "mpb/docs"
 	"mpb/internal/auth"
 	"mpb/pkg/db"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
+// @title MPB Blog Auth API
+// @version 1.0
+// @description Authentication service for MPB blog platform
+// @host localhost:8000
+// @BasePath /api
 func main() {
 	conf := configs.LoadConfig()
 	database := db.NewDb(conf)
@@ -24,5 +31,9 @@ func main() {
 	authRoutes := auth.NewAuthRoutes(api, authHandler)
 	authRoutes.Register()
 
-	log.Fatal(app.Listen(":8000"))
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
+
+	if err := app.Listen(":8000"); err != nil {
+		log.Fatal(err)
+	}
 }
