@@ -1,38 +1,28 @@
 package main
 
 import (
+	"log"
 	"mpb/configs"
 	"mpb/internal/auth"
 	"mpb/pkg/db"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 )
 
 func main() {
 	conf := configs.LoadConfig()
 	database := db.NewDb(conf)
 
-	app := fiber.New(fiber.Config{
-		Prefork: true,
-	})
+	app := fiber.New()
 
-	// блок репозиториев
-	authRepository := auth.NewAuthRepository(conf, database)
-
-	// блок сервисов
-	authService := auth.NewAuthService(authRepository)
-
-	// блок хэндлеров
-	authHandler := auth.NewAuthHandlers(authService)
-
-	// блок роутов
 	api := app.Group("/api")
+
+	// auth блок
+	authRepo := auth.NewAuthRepository(conf, database)
+	authService := auth.NewAuthService(authRepo, []byte(conf.JWT.SecretKey), conf.JWT.AccessTokenTTL)
+	authHandler := auth.NewAuthHandlers(authService)
 	authRoutes := auth.NewAuthRoutes(api, authHandler)
 	authRoutes.Register()
 
-	err := app.Listen(":8000")
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(app.Listen(":8000"))
 }
