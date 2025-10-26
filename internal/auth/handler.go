@@ -17,6 +17,16 @@ func NewAuthHandlers(authService *AuthService) *AuthHandlers {
 	return &AuthHandlers{AuthService: authService}
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticate user and get JWT
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.LoginRequest true "Login credentials"
+// @Success 200 {object} dto.LoginResponse
+// @Failure 401 {object} map[string]string
+// @Router /api/auth/login [post]
 func (handler *AuthHandlers) Login(c *fiber.Ctx) error {
 	req := middleware.Body[dto.LoginRequest](c)
 	if req == nil {
@@ -31,6 +41,16 @@ func (handler *AuthHandlers) Login(c *fiber.Ctx) error {
 	return c.JSON(resp)
 }
 
+// Register AuthHandlers godoc
+// @Summary Register user
+// @Description Create a new user account
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RegisterRequest true "User info"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /api/auth/register [post]
 func (handler *AuthHandlers) Register(c *fiber.Ctx) error {
 	req := middleware.Body[dto.RegisterRequest](c)
 	if req == nil {
