@@ -1,7 +1,11 @@
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        name TEXT NOT NULL,
-                       age INT NOT NULL,
+                       username TEXT UNIQUE NOT NULL,
+                       password_hash TEXT NOT NULL,
+                       email TEXT UNIQUE,
+                       age INT CHECK (age >= 0 AND age <= 150),
+                       is_active BOOLEAN DEFAULT TRUE,
                        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
                        deleted_at TIMESTAMP NULL
@@ -24,9 +28,3 @@ CREATE TRIGGER trigger_set_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at_timestamp();
-
-ALTER TABLE users
-    ADD COLUMN username TEXT UNIQUE NOT NULL DEFAULT '',
-    ADD COLUMN password_hash TEXT NOT NULL DEFAULT '',
-    ADD COLUMN email TEXT UNIQUE,
-    ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;

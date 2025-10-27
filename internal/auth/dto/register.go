@@ -5,5 +5,5 @@ type RegisterRequest struct {
 	Username string `json:"username" validate:"required,min=3,max=50"`
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
-	Age      int    `json:"age" validate:"gte=0,lte=150"`
+	Age      int    `json:"age" validate:"gte=0,lte=123"`
 }
