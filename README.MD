@@ -28,3 +28,5 @@ Implements secure user registration, login, and JWT-based authentication.
 | Documentation   | [fiber-swagger](https://github.com/swaggo/fiber-swagger) |
 
 ---
+
+## How to starts:
