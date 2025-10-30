@@ -38,7 +38,7 @@ func main() {
 	postRepo := posts.NewPostsRepository(database)
 	postService := setupPostsService(postRepo)
 	postsHandler := posts.NewPostsHandlers(postService)
-	postsRoutes := posts.NewPostsRoutes(api, postsHandler)
+	postsRoutes := posts.NewPostsRoutes(api, postsHandler, []byte(conf.JWT.SecretKey))
 	postsRoutes.Register()
 
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)

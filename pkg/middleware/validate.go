@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -89,7 +90,8 @@ func Header[T any](c *fiber.Ctx) *T {
 }
 
 func validationError(c *fiber.Ctx, err error) error {
-	if errs, ok := err.(validator.ValidationErrors); ok {
+	var errs validator.ValidationErrors
+	if errors.As(err, &errs) {
 		var messages []string
 		for _, e := range errs {
 			messages = append(messages, fmt.Sprintf("%s failed on '%s'", e.Field(), e.Tag()))
