@@ -4,6 +4,7 @@ import (
 	"mpb/configs"
 	_ "mpb/docs"
 	"mpb/internal/auth"
+	"mpb/internal/posts"
 	"mpb/pkg/db"
 
 	"github.com/gofiber/fiber/v2"
@@ -30,6 +31,11 @@ func main() {
 	authHandler := auth.NewAuthHandlers(authService)
 	authRoutes := auth.NewAuthRoutes(api, authHandler)
 	authRoutes.Register()
+
+	// posts блок
+	postsHandler := posts.NewPostsHandlers()
+	postsRoutes := posts.NewPostsRoutes(api, postsHandler)
+	postsRoutes.Register()
 
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 
