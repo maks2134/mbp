@@ -2,10 +2,14 @@ package posts
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"mpb/pkg/errors_constant"
 	"strings"
 	"time"
+
+	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill/message"
 )
 
 type PostsRepositoryInterface interface {
@@ -17,11 +21,17 @@ type PostsRepositoryInterface interface {
 }
 
 type PostsService struct {
-	repo PostsRepositoryInterface
+	repo      PostsRepositoryInterface
+	publisher message.Publisher
+	logger    watermill.LoggerAdapter
 }
 
-func NewPostsService(repo PostsRepositoryInterface) *PostsService {
-	return &PostsService{repo: repo}
+func NewPostsService(repo *PostsRepository, publisher message.Publisher, logger watermill.LoggerAdapter) *PostsService {
+	return &PostsService{
+		repo:      repo,
+		publisher: publisher,
+		logger:    logger,
+	}
 }
 
 func (s *PostsService) CreatePost(ctx context.Context, userID int, title, description, tag string) (*Post, error) {
@@ -45,7 +55,20 @@ func (s *PostsService) CreatePost(ctx context.Context, userID int, title, descri
 		return nil, fmt.Errorf("failed to create post: %w", err)
 	}
 
-	// TODO: future: publish event via Watermill
+	event := PostCreatedEvent{
+		ID:        post.ID,
+		UserID:    post.UserID,
+		Title:     post.Title,
+		CreatedAt: post.CreatedAt,
+	}
+
+	payload, _ := json.Marshal(event)
+	msg := message.NewMessage(watermill.NewUUID(), payload)
+
+	if err := s.publisher.Publish("post.created", msg); err != nil {
+		s.logger.Error("failed to publish post.created event", err, nil)
+	}
+
 	return post, nil
 }
 

@@ -7,6 +7,8 @@ import (
 	"mpb/internal/posts"
 	"mpb/pkg/db"
 
+	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	fiberSwagger "github.com/swaggo/fiber-swagger"
@@ -33,7 +35,9 @@ func main() {
 	authRoutes.Register()
 
 	// posts блок
-	postsHandler := posts.NewPostsHandlers()
+	postRepo := posts.NewPostsRepository(database)
+	postService := setupPostsService(postRepo)
+	postsHandler := posts.NewPostsHandlers(postService)
 	postsRoutes := posts.NewPostsRoutes(api, postsHandler)
 	postsRoutes.Register()
 
@@ -42,4 +46,11 @@ func main() {
 	if err := app.Listen(":8000"); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func setupPostsService(repo *posts.PostsRepository) *posts.PostsService {
+	logger := watermill.NewStdLogger(false, false)
+	publisher := gochannel.NewGoChannel(gochannel.Config{}, logger)
+
+	return posts.NewPostsService(repo, publisher, logger)
 }

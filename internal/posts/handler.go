@@ -3,10 +3,13 @@ package posts
 import "github.com/gofiber/fiber/v2"
 
 type PostsHandlers struct {
+	postsService *PostsService
 }
 
-func NewPostsHandlers() *PostsHandlers {
-	return &PostsHandlers{}
+func NewPostsHandlers(service *PostsService) *PostsHandlers {
+	return &PostsHandlers{
+		postsService: service,
+	}
 }
 
 func (h *PostsHandlers) SavePosts(c *fiber.Ctx) error {
