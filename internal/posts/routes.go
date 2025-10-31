@@ -23,8 +23,11 @@ func (r *PostsRoutes) Register() {
 	posts.Get("/", r.handler.GetAllPosts)
 	posts.Get("/:id", r.handler.GetPost)
 
-	auth := posts.Group("/", middleware.JWTAuth(r.jwtSecret))
-	auth.Post("/", middleware.ValidateBody[dto.CreatePostRequest](), r.handler.CreatePost)
-	auth.Put("/:id", middleware.ValidateBody[dto.UpdatePostRequest](), r.handler.UpdatePost)
-	auth.Delete("/:id", r.handler.DeletePost)
+	res := posts.Group("/", middleware.JWTAuth(r.jwtSecret))
+	res.Post("/", middleware.ValidateBody[dto.CreatePostRequest](), r.handler.CreatePost)
+	res.Put("/:id", middleware.ValidateBody[dto.UpdatePostRequest](), r.handler.UpdatePost)
+	res.Delete("/:id", r.handler.DeletePost)
+
+	res.Post("/:id/like", r.handler.LikePost)
+	res.Delete("/:id/unlike", r.handler.UnlikePost)
 }

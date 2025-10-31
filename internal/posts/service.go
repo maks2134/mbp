@@ -21,16 +21,18 @@ type PostsRepositoryInterface interface {
 }
 
 type PostsService struct {
-	repo      PostsRepositoryInterface
-	publisher message.Publisher
-	logger    watermill.LoggerAdapter
+	repo           PostsRepositoryInterface
+	metricsService *MetricsService
+	publisher      message.Publisher
+	logger         watermill.LoggerAdapter
 }
 
-func NewPostsService(repo *PostsRepository, publisher message.Publisher, logger watermill.LoggerAdapter) *PostsService {
+func NewPostsService(repo *PostsRepository, metricsService *MetricsService, publisher message.Publisher, logger watermill.LoggerAdapter) *PostsService {
 	return &PostsService{
-		repo:      repo,
-		publisher: publisher,
-		logger:    logger,
+		repo:           repo,
+		metricsService: metricsService,
+		publisher:      publisher,
+		logger:         logger,
 	}
 }
 
@@ -77,6 +79,17 @@ func (s *PostsService) GetPostByID(ctx context.Context, id int) (*Post, error) {
 	if err != nil {
 		return nil, errors_constant.PostNotFound
 	}
+
+	if err := s.metricsService.IncrementViews(ctx, id); err != nil {
+		s.logger.Error("failed to increment views", err, nil)
+	}
+
+	likes, views, err := s.metricsService.GetMetrics(ctx, id)
+	if err == nil {
+		post.Like = likes
+		post.CountViewers = views
+	}
+
 	return post, nil
 }
 
@@ -110,7 +123,7 @@ func (s *PostsService) DeletePost(ctx context.Context, userID, postID int) error
 	}
 
 	if post.UserID != userID {
-		return errors_constant.UserNotFound
+		return errors_constant.UserNotAuthorized
 	}
 
 	if err := s.repo.Delete(ctx, postID); err != nil {
@@ -125,6 +138,14 @@ func (s *PostsService) ListPosts(ctx context.Context, f PostFilter) ([]Post, err
 	posts, err := s.repo.List(ctx, f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list posts: %w", err)
+	}
+
+	for i := range posts {
+		likes, views, err := s.metricsService.GetMetrics(ctx, posts[i].ID)
+		if err == nil {
+			posts[i].Like = likes
+			posts[i].CountViewers = views
+		}
 	}
 
 	return posts, nil

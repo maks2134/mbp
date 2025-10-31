@@ -11,11 +11,15 @@ import (
 )
 
 type PostsHandlers struct {
-	service *PostsService
+	service        *PostsService
+	metricsService *MetricsService
 }
 
-func NewPostsHandlers(service *PostsService) *PostsHandlers {
-	return &PostsHandlers{service: service}
+func NewPostsHandlers(service *PostsService, metricsService *MetricsService) *PostsHandlers {
+	return &PostsHandlers{
+		service:        service,
+		metricsService: metricsService,
+	}
 }
 
 // CreatePost godoc
@@ -121,7 +125,6 @@ func (h *PostsHandlers) UpdatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
 	}
 
-	// Получаем текущий пост для использования значений по умолчанию
 	currentPost, err := h.service.GetPostByID(c.Context(), id)
 	if err != nil {
 		if errors.Is(err, errors_constant.PostNotFound) {
@@ -130,12 +133,10 @@ func (h *PostsHandlers) UpdatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	// Проверяем права доступа
 	if currentPost.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "you can update only your own posts"})
 	}
 
-	// Используем переданные значения или текущие значения поста
 	title := currentPost.Title
 	if req.Title != nil {
 		title = *req.Title
@@ -194,6 +195,80 @@ func (h *PostsHandlers) DeletePost(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// LikePost godoc
+// @Summary Like a post
+// @Tags Posts
+// @Param id path int true "Post ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /api/posts/{id}/like [post]
+func (h *PostsHandlers) LikePost(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid post id"})
+	}
+
+	userID, ok := c.Locals("user_id").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
+	}
+
+	if err := h.metricsService.LikePost(c.Context(), userID, id); err != nil {
+		if err.Error() == "user already liked this post" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	likes, err := h.metricsService.GetLikes(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"post_id": id,
+		"likes":   likes,
+		"message": "Post liked successfully",
+	})
+}
+
+// UnlikePost godoc
+// @Summary Unlike a post
+// @Tags Posts
+// @Param id path int true "Post ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /api/posts/{id}/unlike [delete]
+func (h *PostsHandlers) UnlikePost(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid post id"})
+	}
+
+	userID, ok := c.Locals("user_id").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
+	}
+
+	if err := h.metricsService.UnlikePost(c.Context(), userID, id); err != nil {
+		if err.Error() == "user hasn't liked this post" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	likes, err := h.metricsService.GetLikes(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{
+		"post_id": id,
+		"likes":   likes,
+		"message": "Post unliked successfully",
+	})
 }
 
 func postToResponse(post *Post) dto.PostResponse {

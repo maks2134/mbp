@@ -16,9 +16,14 @@ type DbConfig struct {
 	Dsn string
 }
 
+type RedisConfig struct {
+	Addr string
+}
+
 type Config struct {
-	Db  DbConfig
-	JWT JWTConfig
+	Db    DbConfig
+	Redis RedisConfig
+	JWT   JWTConfig
 }
 
 func LoadConfig() *Config {
@@ -31,9 +36,17 @@ func LoadConfig() *Config {
 		}
 	}
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
 	return &Config{
 		Db: DbConfig{
 			Dsn: os.Getenv("DSN"),
+		},
+		Redis: RedisConfig{
+			Addr: redisAddr,
 		},
 		JWT: JWTConfig{
 			SecretKey:      os.Getenv("JWT_SECRET"),
