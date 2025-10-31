@@ -1,14 +1,16 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE users (
-                       id SERIAL PRIMARY KEY,
-                       name TEXT NOT NULL,
-                       username TEXT UNIQUE NOT NULL,
-                       password_hash TEXT NOT NULL,
-                       email TEXT UNIQUE,
-                       age INT CHECK (age >= 0 AND age <= 150),
-                       is_active BOOLEAN DEFAULT TRUE,
-                       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                       updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                       deleted_at TIMESTAMP NULL
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    email TEXT UNIQUE,
+    age INT CHECK (age >= 0 AND age <= 150),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP NULL
 );
 
 CREATE INDEX idx_users_name ON users (name);
@@ -28,3 +30,11 @@ CREATE TRIGGER trigger_set_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at_timestamp();
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TRIGGER IF EXISTS trigger_set_updated_at ON users;
+DROP FUNCTION IF EXISTS set_updated_at_timestamp() CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+-- +goose StatementEnd

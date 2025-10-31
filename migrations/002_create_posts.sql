@@ -1,14 +1,16 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE posts (
-                       id SERIAL PRIMARY KEY,
-                       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                       title TEXT NOT NULL,
-                       description TEXT NOT NULL,
-                       tag TEXT NOT NULL,
-                       "like" INT DEFAULT 0,
-                       count_viewers INT DEFAULT 0,
-                       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                       updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                       deleted_at TIMESTAMP NULL
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    tag TEXT NOT NULL,
+    "like" INT DEFAULT 0,
+    count_viewers INT DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP NULL
 );
 
 CREATE INDEX idx_posts_user_id ON posts (user_id);
@@ -22,7 +24,10 @@ CREATE TRIGGER trigger_set_updated_at_posts
     BEFORE UPDATE ON posts
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at_timestamp();
+-- +goose StatementEnd
 
-/*Проверка на существование индексов*/
-EXPLAIN ANALYZE
-SELECT * FROM posts WHERE user_id = 42 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 10;
+-- +goose Down
+-- +goose StatementBegin
+DROP TRIGGER IF EXISTS trigger_set_updated_at_posts ON posts;
+DROP TABLE IF EXISTS posts CASCADE;
+-- +goose StatementEnd
