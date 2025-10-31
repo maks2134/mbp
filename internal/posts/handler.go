@@ -33,14 +33,21 @@ func (h *PostsHandlers) CreatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request"})
 	}
 
-	userID := c.Locals("user_id").(int)
+	userID, ok := c.Locals("user_id").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
+	}
 
-	post, err := h.service.CreatePost(c.Context(), userID, *req)
+	post, err := h.service.CreatePost(c.Context(), userID, req.Title, req.Description, req.Tag)
 	if err != nil {
+		if errors.Is(err, errors_constant.InvalidTitle) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(post)
+	response := postToResponse(post)
+	return c.Status(fiber.StatusCreated).JSON(response)
 }
 
 // GetPost godoc
@@ -59,13 +66,14 @@ func (h *PostsHandlers) GetPost(c *fiber.Ctx) error {
 
 	post, err := h.service.GetPostByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, errors_constant.NotFound) {
+		if errors.Is(err, errors_constant.PostNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "post not found"})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(post)
+	response := postToResponse(post)
+	return c.JSON(response)
 }
 
 // GetAllPosts godoc
@@ -75,11 +83,16 @@ func (h *PostsHandlers) GetPost(c *fiber.Ctx) error {
 // @Success 200 {array} dto.PostResponse
 // @Router /api/posts [get]
 func (h *PostsHandlers) GetAllPosts(c *fiber.Ctx) error {
-	posts, err := h.service.GetAllPosts(c.Context())
+	posts, err := h.service.ListPosts(c.Context(), PostFilter{OnlyActive: true})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": errors.New("error getting all posts").Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.JSON(posts)
+
+	response := make([]dto.PostResponse, len(posts))
+	for i, post := range posts {
+		response[i] = postToResponse(&post)
+	}
+	return c.JSON(response)
 }
 
 // UpdatePost godoc
@@ -103,9 +116,13 @@ func (h *PostsHandlers) UpdatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid body"})
 	}
 
-	userID := c.Locals("user_id").(int)
+	userID, ok := c.Locals("user_id").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
+	}
 
-	post, err := h.service.UpdatePost(c.Context(), userID, id, *req)
+	// Получаем текущий пост для использования значений по умолчанию
+	currentPost, err := h.service.GetPostByID(c.Context(), id)
 	if err != nil {
 		if errors.Is(err, errors_constant.PostNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "post not found"})
@@ -113,7 +130,38 @@ func (h *PostsHandlers) UpdatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(post)
+	// Проверяем права доступа
+	if currentPost.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "you can update only your own posts"})
+	}
+
+	// Используем переданные значения или текущие значения поста
+	title := currentPost.Title
+	if req.Title != nil {
+		title = *req.Title
+	}
+	description := currentPost.Description
+	if req.Description != nil {
+		description = *req.Description
+	}
+	tag := currentPost.Tag
+	if req.Tag != nil {
+		tag = *req.Tag
+	}
+
+	post, err := h.service.UpdatePost(c.Context(), userID, id, title, description, tag)
+	if err != nil {
+		if errors.Is(err, errors_constant.PostNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "post not found"})
+		}
+		if errors.Is(err, errors_constant.UserNotAuthorized) {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "you can update only your own posts"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	response := postToResponse(post)
+	return c.JSON(response)
 }
 
 // DeletePost godoc
@@ -129,15 +177,35 @@ func (h *PostsHandlers) DeletePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid post id"})
 	}
 
-	userID := c.Locals("user_id").(int)
+	userID, ok := c.Locals("user_id").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
+	}
 
 	err = h.service.DeletePost(c.Context(), userID, id)
 	if err != nil {
 		if errors.Is(err, errors_constant.PostNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "post not found"})
 		}
+		if errors.Is(err, errors_constant.UserNotAuthorized) {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "you can delete only your own posts"})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func postToResponse(post *Post) dto.PostResponse {
+	return dto.PostResponse{
+		ID:           post.ID,
+		UserID:       post.UserID,
+		Title:        post.Title,
+		Description:  post.Description,
+		Tag:          post.Tag,
+		Like:         post.Like,
+		CountViewers: post.CountViewers,
+		CreatedAt:    post.CreatedAt,
+		UpdatedAt:    post.UpdatedAt,
+	}
 }

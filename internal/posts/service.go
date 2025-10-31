@@ -87,7 +87,7 @@ func (s *PostsService) UpdatePost(ctx context.Context, userID, postID int, title
 	}
 
 	if post.UserID != userID {
-		return nil, errors_constant.UserNotFound
+		return nil, errors_constant.UserNotAuthorized
 	}
 
 	post.Title = strings.TrimSpace(title)
