@@ -16,6 +16,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - mpb_network
+
+  redis:
+    container_name: redis-mpb
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - mpb_network
 
   app:
     build:
@@ -26,14 +45,19 @@ services:
       - "8000:8000"
     environment:
       DSN: postgres://mpb:mpb_pas@postgres:5432/mpb_db?sslmode=disable
+      REDIS_ADDR: redis:6379
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       JWT_TTL: ${JWT_TTL:-24h}
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
+    networks:
+      - mpb_network
 
   migrate:
     build:
@@ -47,3 +71,9 @@ services:
       postgres:
         condition: service_healthy
     restart: "no"
+    networks:
+      - mpb_network
+
+networks:
+  mpb_network:
+    driver: bridge
