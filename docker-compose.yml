@@ -11,3 +11,39 @@ services:
       - ./postgres-data_mpb:/data/postgres
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mpb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mpb-app
+    ports:
+      - "8000:8000"
+    environment:
+      DSN: postgres://mpb:mpb_pas@postgres:5432/mpb_db?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_TTL: ${JWT_TTL:-24h}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mpb-migrate
+    command: ["./migrate"]
+    environment:
+      DSN: postgres://mpb:mpb_pas@postgres:5432/mpb_db?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
