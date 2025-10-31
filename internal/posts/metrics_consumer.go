@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -24,115 +25,114 @@ func NewMetricsSyncConsumer(repo PostsRepositoryInterface, logger watermill.Logg
 }
 
 func (c *MetricsSyncConsumer) StartConsumers(subscriber message.Subscriber) error {
-	go func() {
-		if err := c.consumeViewedEvents(subscriber); err != nil {
-			c.logger.Error("failed to consume viewed events", err, nil)
-		}
-	}()
-
-	go func() {
-		if err := c.consumeLikedEvents(subscriber); err != nil {
-			c.logger.Error("failed to consume liked events", err, nil)
-		}
-	}()
-
-	go func() {
-		if err := c.consumeUnlikedEvents(subscriber); err != nil {
-			c.logger.Error("failed to consume unliked events", err, nil)
-		}
-	}()
-
-	return nil
-}
-
-func (c *MetricsSyncConsumer) consumeViewedEvents(subscriber message.Subscriber) error {
-	messages, err := subscriber.Subscribe(context.Background(), "post.viewed")
+	messagesViewed, err := subscriber.Subscribe(context.Background(), "post.viewed")
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to post.viewed: %w", err)
 	}
 
-	for msg := range messages {
-		var event PostViewedEvent
-		if err := json.Unmarshal(msg.Payload, &event); err != nil {
-			c.logger.Error("failed to unmarshal viewed event", err, nil)
-			msg.Nack()
-			continue
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := c.syncViews(ctx, event.PostID, event.Views); err != nil {
-			c.logger.Error("failed to sync views", err, nil)
-			msg.Nack()
-			cancel()
-			continue
-		}
-		cancel()
-
-		msg.Ack()
-		log.Printf("Synced views for post %d: %d", event.PostID, event.Views)
-	}
-
-	return nil
-}
-
-func (c *MetricsSyncConsumer) consumeLikedEvents(subscriber message.Subscriber) error {
-	messages, err := subscriber.Subscribe(context.Background(), "post.liked")
+	messagesLiked, err := subscriber.Subscribe(context.Background(), "post.liked")
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to post.liked: %w", err)
 	}
 
-	for msg := range messages {
-		var event PostLikedEvent
-		if err := json.Unmarshal(msg.Payload, &event); err != nil {
-			c.logger.Error("failed to unmarshal liked event", err, nil)
-			msg.Nack()
-			continue
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := c.syncLikes(ctx, event.PostID, event.Likes); err != nil {
-			c.logger.Error("failed to sync likes", err, nil)
-			msg.Nack()
-			cancel()
-			continue
-		}
-		cancel()
-
-		msg.Ack()
-		log.Printf("Synced likes for post %d: %d", event.PostID, event.Likes)
-	}
-
-	return nil
-}
-
-func (c *MetricsSyncConsumer) consumeUnlikedEvents(subscriber message.Subscriber) error {
-	messages, err := subscriber.Subscribe(context.Background(), "post.unliked")
+	messagesUnliked, err := subscriber.Subscribe(context.Background(), "post.unliked")
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to post.unliked: %w", err)
 	}
 
-	for msg := range messages {
-		var event PostUnlikedEvent
-		if err := json.Unmarshal(msg.Payload, &event); err != nil {
-			c.logger.Error("failed to unmarshal unliked event", err, nil)
-			msg.Nack()
-			continue
-		}
+	c.logger.Info("Subscriptions created, starting consumers...", nil)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		if err := c.syncLikes(ctx, event.PostID, event.Likes); err != nil {
-			c.logger.Error("failed to sync likes", err, nil)
-			msg.Nack()
-			cancel()
-			continue
+	go func() {
+		c.logger.Info("Consumer for post.viewed started, waiting for messages...", nil)
+		for msg := range messagesViewed {
+			c.processViewedEvent(msg)
 		}
-		cancel()
+	}()
 
-		msg.Ack()
-		log.Printf("Synced likes for post %d: %d (unliked)", event.PostID, event.Likes)
+	go func() {
+		c.logger.Info("Consumer for post.liked started, waiting for messages...", nil)
+		for msg := range messagesLiked {
+			c.processLikedEvent(msg)
+		}
+	}()
+
+	go func() {
+		c.logger.Info("Consumer for post.unliked started, waiting for messages...", nil)
+		for msg := range messagesUnliked {
+			c.processUnlikedEvent(msg)
+		}
+	}()
+
+	for i := 0; i < 50; i++ {
+		runtime.Gosched()
+	}
+	time.Sleep(1 * time.Second)
+
+	c.logger.Info("All event consumers started - subscriptions should be registered", nil)
+	return nil
+}
+
+func (c *MetricsSyncConsumer) processViewedEvent(msg *message.Message) {
+	var event PostViewedEvent
+	if err := json.Unmarshal(msg.Payload, &event); err != nil {
+		c.logger.Error("failed to unmarshal viewed event", err, nil)
+		msg.Nack()
+		return
 	}
 
-	return nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := c.syncViews(ctx, event.PostID, event.Views); err != nil {
+		c.logger.Error("failed to sync views", err, nil)
+		msg.Nack()
+		return
+	}
+
+	msg.Ack()
+	log.Printf("Synced views for post %d: %d", event.PostID, event.Views)
+}
+
+func (c *MetricsSyncConsumer) processLikedEvent(msg *message.Message) {
+	var event PostLikedEvent
+	if err := json.Unmarshal(msg.Payload, &event); err != nil {
+		c.logger.Error("failed to unmarshal liked event", err, nil)
+		msg.Nack()
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := c.syncLikes(ctx, event.PostID, event.Likes); err != nil {
+		c.logger.Error("failed to sync likes", err, nil)
+		msg.Nack()
+		return
+	}
+
+	msg.Ack()
+	log.Printf("Synced likes for post %d: %d", event.PostID, event.Likes)
+}
+
+func (c *MetricsSyncConsumer) processUnlikedEvent(msg *message.Message) {
+	var event PostUnlikedEvent
+	if err := json.Unmarshal(msg.Payload, &event); err != nil {
+		c.logger.Error("failed to unmarshal unliked event", err, nil)
+		msg.Nack()
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := c.syncLikes(ctx, event.PostID, event.Likes); err != nil {
+		c.logger.Error("failed to sync likes", err, nil)
+		msg.Nack()
+		return
+	}
+
+	msg.Ack()
+	log.Printf("Synced likes for post %d: %d (unliked)", event.PostID, event.Likes)
 }
 
 func (c *MetricsSyncConsumer) syncViews(ctx context.Context, postID, views int) error {
