@@ -1,3 +1,5 @@
 /.idea
 .env
 /postgres-data_mpb
+main
+/redis-data

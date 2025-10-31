@@ -28,8 +28,10 @@ coverage.html
 
 # Documentation
 *.md
-docs/
 !README.md
+# Keep docs.go for swagger, but ignore other docs files
+docs/*.json
+docs/*.yaml
 
 # Environment files
 .env
