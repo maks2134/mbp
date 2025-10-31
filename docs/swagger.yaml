@@ -1,5 +1,21 @@
 basePath: /api
 definitions:
+  dto.CreatePostRequest:
+    properties:
+      description:
+        minLength: 10
+        type: string
+      tag:
+        maxLength: 50
+        type: string
+      title:
+        maxLength: 200
+        minLength: 3
+        type: string
+    required:
+    - description
+    - title
+    type: object
   dto.LoginRequest:
     properties:
       password:
@@ -19,10 +35,31 @@ definitions:
       user:
         $ref: '#/definitions/user.User'
     type: object
+  dto.PostResponse:
+    properties:
+      count_viewers:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      like:
+        type: integer
+      tag:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
   dto.RegisterRequest:
     properties:
       age:
-        maximum: 150
+        maximum: 123
         minimum: 0
         type: integer
       email:
@@ -43,6 +80,19 @@ definitions:
     - name
     - password
     - username
+    type: object
+  dto.UpdatePostRequest:
+    properties:
+      description:
+        minLength: 10
+        type: string
+      tag:
+        maxLength: 50
+        type: string
+      title:
+        maxLength: 200
+        minLength: 3
+        type: string
     type: object
   user.User:
     properties:
@@ -132,4 +182,118 @@ paths:
       summary: Register user
       tags:
       - Auth
+  /api/posts:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PostResponse'
+            type: array
+      summary: List all posts
+      tags:
+      - Posts
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PostResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create new post
+      tags:
+      - Posts
+  /api/posts/{id}:
+    delete:
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete post
+      tags:
+      - Posts
+    get:
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PostResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get post by ID
+      tags:
+      - Posts
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated post data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PostResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update existing post
+      tags:
+      - Posts
 swagger: "2.0"
