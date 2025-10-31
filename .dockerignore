@@ -1,0 +1,67 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+dist/
+build/
+
+# Test coverage
+*.cover
+coverage.out
+coverage.html
+
+# Documentation
+*.md
+docs/
+!README.md
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database
+postgres-data_mpb/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile*
+.dockerignore
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+node_modules/
+tmp/
+temp/
+
