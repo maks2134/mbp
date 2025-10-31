@@ -7,7 +7,7 @@ on:
     branches: [ main, master, develop ]
 
 env:
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.25'
   POSTGRES_VERSION: '15-alpine'
 
 jobs:

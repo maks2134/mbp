@@ -20,3 +20,5 @@ CREATE TRIGGER trigger_set_updated_at_comments
     BEFORE UPDATE ON comments
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at_timestamp();
+
+

@@ -22,3 +22,7 @@ CREATE TRIGGER trigger_set_updated_at_posts
     BEFORE UPDATE ON posts
     FOR EACH ROW
 EXECUTE FUNCTION set_updated_at_timestamp();
+
+/*Проверка на существование индексов*/
+EXPLAIN ANALYZE
+SELECT * FROM posts WHERE user_id = 42 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 10;
