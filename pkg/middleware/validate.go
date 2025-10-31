@@ -28,39 +28,39 @@ func ValidateBody[T any]() fiber.Handler {
 	}
 }
 
-func ValidateQuery[T any]() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var req T
-
-		if err := c.QueryParser(&req); err != nil {
-			return badRequest(c, "invalid query parameters")
-		}
-
-		if err := validate.Struct(req); err != nil {
-			return validationError(c, err)
-		}
-
-		c.Locals("query", req)
-		return c.Next()
-	}
-}
-
-func ValidateHeader[T any]() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var req T
-
-		if err := c.ReqHeaderParser(&req); err != nil {
-			return badRequest(c, "invalid headers")
-		}
-
-		if err := validate.Struct(req); err != nil {
-			return validationError(c, err)
-		}
-
-		c.Locals("header", req)
-		return c.Next()
-	}
-}
+//func ValidateQuery[T any]() fiber.Handler {
+//	return func(c *fiber.Ctx) error {
+//		var req T
+//
+//		if err := c.QueryParser(&req); err != nil {
+//			return badRequest(c, "invalid query parameters")
+//		}
+//
+//		if err := validate.Struct(req); err != nil {
+//			return validationError(c, err)
+//		}
+//
+//		c.Locals("query", req)
+//		return c.Next()
+//	}
+//}
+//
+//func ValidateHeader[T any]() fiber.Handler {
+//	return func(c *fiber.Ctx) error {
+//		var req T
+//
+//		if err := c.ReqHeaderParser(&req); err != nil {
+//			return badRequest(c, "invalid headers")
+//		}
+//
+//		if err := validate.Struct(req); err != nil {
+//			return validationError(c, err)
+//		}
+//
+//		c.Locals("header", req)
+//		return c.Next()
+//	}
+//}
 
 func Body[T any](c *fiber.Ctx) *T {
 	if v := c.Locals("body"); v != nil {
@@ -71,23 +71,23 @@ func Body[T any](c *fiber.Ctx) *T {
 	return nil
 }
 
-func Query[T any](c *fiber.Ctx) *T {
-	if v := c.Locals("query"); v != nil {
-		if typed, ok := v.(T); ok {
-			return &typed
-		}
-	}
-	return nil
-}
-
-func Header[T any](c *fiber.Ctx) *T {
-	if v := c.Locals("header"); v != nil {
-		if typed, ok := v.(T); ok {
-			return &typed
-		}
-	}
-	return nil
-}
+//func Query[T any](c *fiber.Ctx) *T {
+//	if v := c.Locals("query"); v != nil {
+//		if typed, ok := v.(T); ok {
+//			return &typed
+//		}
+//	}
+//	return nil
+//}
+//
+//func Header[T any](c *fiber.Ctx) *T {
+//	if v := c.Locals("header"); v != nil {
+//		if typed, ok := v.(T); ok {
+//			return &typed
+//		}
+//	}
+//	return nil
+//}
 
 func validationError(c *fiber.Ctx, err error) error {
 	var errs validator.ValidationErrors
