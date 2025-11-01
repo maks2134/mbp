@@ -1,6 +1,8 @@
 package comments
 
 import (
+	"mpb/pkg/middleware"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,12 +17,12 @@ func NewCommentsRoutes(router fiber.Router, handler *CommentsHandler, jwtSecret 
 }
 
 func (r *CommentsRoutes) Register() {
-	//posts := r.router.Group("/posts")
+	comments := r.router.Group("/comments")
 
-	//posts.Get("/", r.handler.GetAllPosts)
+	comments.Get("/", r.handler.GetAllComments)
 
-	//auth := posts.Group("/", middleware.JWTAuth(r.jwtSecret))
-	//auth.Post("/", r.handler)
-	//auth.Put("/:id", middleware.ValidateBody[dto.UpdatePostRequest](), r.handler.UpdatePost)
-	//auth.Delete("/:id", r.handler.DeletePost)
+	commentsAuth := comments.Group("/", middleware.JWTAuth(r.jwtSecret))
+	commentsAuth.Post("/", r.handler.CreateComments)
+	commentsAuth.Put("/:id", r.handler.UpdateComments)
+	commentsAuth.Delete("/:id", r.handler.DeleteComments)
 }
