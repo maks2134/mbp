@@ -79,3 +79,12 @@ func (r *CommentsRepository) List(ctx context.Context, postID int) ([]Comment, e
 
 	return comments, nil
 }
+
+func (r *CommentsRepository) FindCommentByID(ctx context.Context, commentID int) (*Comment, error) {
+	var comment Comment
+	const query = `SELECT * FROM comments WHERE id = $1 AND deleted_at IS NULL`
+	if err := r.db.Conn.GetContext(ctx, &comment, query, commentID); err != nil {
+		return nil, fmt.Errorf("failed to find comment by id: %w", err)
+	}
+	return &comment, nil
+}
