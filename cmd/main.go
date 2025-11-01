@@ -69,7 +69,10 @@ func main() {
 
 	// comments блок
 	commentRepo := comments.NewCommentsRepository(database)
-	_ = comments.NewCommentsService(commentRepo)
+	commentsService := comments.NewCommentsService(commentRepo)
+	commentsHandler := comments.NewCommentsHandlers(commentsService)
+	commentsRoutes := comments.NewCommentsRoutes(api, commentsHandler, []byte(conf.JWT.SecretKey))
+	commentsRoutes.Register()
 
 	metricsConsumer := posts.NewMetricsSyncConsumer(postRepo, logger)
 	if err := metricsConsumer.StartConsumers(subscriber); err != nil {
