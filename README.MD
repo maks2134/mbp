@@ -25,7 +25,7 @@ Implements secure user registration, login, JWT-based authentication, and blog p
 |-----------------|----------|
 | Web Framework   | [Fiber v2](https://github.com/gofiber/fiber) |
 | DB Access       | [sqlx](https://github.com/jmoiron/sqlx) |
-| Database        | PostgreSQL |
+| Database        | PostgreSQL, Redis |
 | JWT Auth        | [golang-jwt/jwt/v5](https://github.com/golang-jwt/jwt) |
 | Validation      | [go-playground/validator/v10](https://github.com/go-playground/validator) |
 | Documentation   | [fiber-swagger](https://github.com/swaggo/fiber-swagger) |
