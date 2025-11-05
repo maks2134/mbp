@@ -1,4 +1,4 @@
-# 🔐 MPB Blog Platform
+# MPB Blog Platform
 
 Backend API for MPB Blog Platform, built with **Go + Fiber + PostgreSQL + JWT**.  
 Implements secure user registration, login, JWT-based authentication, and blog post management with event-driven architecture.
