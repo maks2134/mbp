@@ -1,24 +1,41 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"mpb/configs"
 	model "mpb/internal/user"
 	"mpb/pkg/db"
 	"mpb/pkg/errors_constant"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthRepository struct {
 	config *configs.Config
 	db     *db.Db
+	redis  *redis.Client
 }
 
-func NewAuthRepository(config *configs.Config, database *db.Db) *AuthRepository {
+func NewAuthRepository(config *configs.Config, database *db.Db, red *redis.Client) *AuthRepository {
 	return &AuthRepository{
 		config: config,
 		db:     database,
+		redis:  red,
 	}
+}
+
+func (repo *AuthRepository) SetRefreshToken(userId int, token string, ttl time.Duration) error {
+	key := fmt.Sprintf("refresh_token:%d", userId)
+	return repo.redis.Set(context.Background(), key, token, ttl).Err()
+}
+
+func (repo *AuthRepository) GetRefreshToken(userId int) (string, error) {
+	key := fmt.Sprintf("refresh_token:%d", userId)
+	return repo.redis.Get(context.Background(), key).Result()
 }
 
 func (repo *AuthRepository) Register(username, passwordHash, email, name string, age int) error {
