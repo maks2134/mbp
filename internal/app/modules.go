@@ -23,7 +23,7 @@ func RegisterModules(
 	conf *configs.Config,
 ) {
 	// auth блок
-	authRepo := auth.NewAuthRepository(conf, database)
+	authRepo := auth.NewAuthRepository(conf, database, redisClient.Client)
 	authService := auth.NewAuthService(authRepo, []byte(conf.JWT.SecretKey), conf.JWT.AccessTokenTTL)
 	authHandler := auth.NewAuthHandlers(authService)
 	authRoutes := auth.NewAuthRoutes(api, authHandler)

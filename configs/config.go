@@ -8,8 +8,10 @@ import (
 )
 
 type JWTConfig struct {
-	SecretKey      string
-	AccessTokenTTL time.Duration
+	SecretKey             string
+	AccessTokenTTL        time.Duration
+	RefreshTokenTTL       time.Duration
+	RefreshTokenSecretKey string
 }
 
 type DbConfig struct {
@@ -29,10 +31,17 @@ type Config struct {
 func LoadConfig() *Config {
 	_ = godotenv.Load(".env")
 
-	ttl := 24 * time.Hour
-	if v := os.Getenv("JWT_TTL"); v != "" {
+	accessTtl := 24 * time.Hour
+	if v := os.Getenv("JWT_ACCESS_TTL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
-			ttl = d
+			accessTtl = d
+		}
+	}
+
+	refreshTtl := 720 * time.Hour // 30 дней
+	if v := os.Getenv("JWT_REFRESH_TTL"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			refreshTtl = d
 		}
 	}
 
@@ -49,8 +58,10 @@ func LoadConfig() *Config {
 			Addr: redisAddr,
 		},
 		JWT: JWTConfig{
-			SecretKey:      os.Getenv("JWT_SECRET"),
-			AccessTokenTTL: ttl,
+			SecretKey:             os.Getenv("JWT_SECRET"),
+			AccessTokenTTL:        accessTtl,
+			RefreshTokenTTL:       refreshTtl,
+			RefreshTokenSecretKey: os.Getenv("JWT_REFRESH_SECRET"),
 		},
 	}
 }
