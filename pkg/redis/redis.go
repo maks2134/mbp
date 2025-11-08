@@ -16,6 +16,8 @@ func NewRedis(conf *configs.Config) (*Redis, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: conf.Redis.Addr,
 		DB:   0,
+		// Предупреждение о maint_notifications можно игнорировать -
+		// это не критично и не влияет на функциональность
 	})
 
 	ctx := context.Background()

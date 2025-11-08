@@ -1,4 +1,4 @@
-# MPB Blog Platform
+# 🔐 MPB Blog Platform
 
 Backend API for MPB Blog Platform, built with **Go + Fiber + PostgreSQL + JWT**.  
 Implements secure user registration, login, JWT-based authentication, and blog post management with event-driven architecture.
@@ -25,7 +25,7 @@ Implements secure user registration, login, JWT-based authentication, and blog p
 |-----------------|----------|
 | Web Framework   | [Fiber v2](https://github.com/gofiber/fiber) |
 | DB Access       | [sqlx](https://github.com/jmoiron/sqlx) |
-| Database        | PostgreSQL, Redis |
+| Database        | PostgreSQL |
 | JWT Auth        | [golang-jwt/jwt/v5](https://github.com/golang-jwt/jwt) |
 | Validation      | [go-playground/validator/v10](https://github.com/go-playground/validator) |
 | Documentation   | [fiber-swagger](https://github.com/swaggo/fiber-swagger) |
@@ -64,9 +64,9 @@ Implements secure user registration, login, JWT-based authentication, and blog p
    ```
 
    This will:
-    - Start PostgreSQL database
-    - Run migrations automatically
-    - Start the application on `http://localhost:8000`
+   - Start PostgreSQL database
+   - Run migrations automatically
+   - Start the application on `http://localhost:8000`
 
 4. **View logs:**
    ```bash
@@ -74,7 +74,7 @@ Implements secure user registration, login, JWT-based authentication, and blog p
    ```
 
 5. **Access Swagger documentation:**
-    - Open `http://localhost:8000/swagger/index.html`
+   - Open `http://localhost:8000/swagger/index.html`
 
 ### Manual Setup
 
@@ -196,14 +196,14 @@ make test-coverage
 The project includes GitHub Actions workflows:
 
 - **CI Pipeline** (`.github/workflows/ci.yml`):
-    - Linting with golangci-lint
-    - Running tests with PostgreSQL service
-    - Building the application
-    - Building and pushing Docker images
-    - Security scanning with Gosec and Trivy
+  - Linting with golangci-lint
+  - Running tests with PostgreSQL service
+  - Building the application
+  - Building and pushing Docker images
+  - Security scanning with Gosec and Trivy
 
 - **CodeQL Analysis** (`.github/workflows/codeql.yml`):
-    - Automated code security analysis
+  - Automated code security analysis
 
 ---
 

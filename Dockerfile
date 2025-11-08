@@ -1,41 +1,47 @@
 FROM golang:1.25-alpine AS builder
 
-RUN apk add --no-cache git ca-certificates
+RUN apk add --no-cache git ca-certificates tzdata
 
-WORKDIR /app
+WORKDIR /build
 
 COPY go.mod go.sum ./
-RUN go mod download
+
+RUN go mod download && go mod verify
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-w -s" -o /bin/mpb ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -a -installsuffix cgo \
+    -o /app/mpb \
+    ./cmd/main.go
 
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-w -s" -o /bin/migrate ./cmd/migrate.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -a -installsuffix cgo \
+    -o /app/migrate \
+    ./cmd/migrate.go
 
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-w -s" -o /bin/healthcheck ./cmd/healthcheck/main.go
+FROM alpine:latest
 
-FROM gcr.io/distroless/static-debian11
+RUN apk --no-cache add ca-certificates tzdata curl
 
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+WORKDIR /app
 
-COPY --from=builder /bin/mpb /
-COPY --from=builder /bin/migrate /
-COPY --from=builder /bin/healthcheck /
+COPY --from=builder /app/mpb .
+COPY --from=builder /app/migrate .
 
-COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /build/migrations ./migrations
 
-LABEL maintainer="Maks Kozlov <maks210306@yandex.by>"
-LABEL version="1.0.0"
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 
-USER 65532:65532
-
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/healthcheck"]
+    CMD curl -f http://localhost:8000/api/posts || exit 1
 
-CMD ["/mpb"]
+CMD ["./mpb"]
