@@ -28,4 +28,9 @@ func (r *AuthRoutes) Register() {
 		middleware.ValidateBody[dto.LoginRequest](),
 		r.handler.Login,
 	)
+
+	auth.Post("/refresh",
+		middleware.ValidateBody[dto.RefreshRequest](),
+		r.handler.Refresh,
+	)
 }

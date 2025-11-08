@@ -5,6 +5,7 @@ import (
 )
 
 type LoginResponse struct {
-	Token string     `json:"token"`
-	User  *user.User `json:"user"`
+	Token        string     `json:"token"`
+	User         *user.User `json:"user"`
+	RefreshToken string     `json:"refresh_token"`
 }

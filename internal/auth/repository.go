@@ -38,6 +38,11 @@ func (repo *AuthRepository) GetRefreshToken(userId int) (string, error) {
 	return repo.redis.Get(context.Background(), key).Result()
 }
 
+func (repo *AuthRepository) DeleteRefreshToken(userId int) error {
+	key := fmt.Sprintf("refresh_token:%d", userId)
+	return repo.redis.Del(context.Background(), key).Err()
+}
+
 func (repo *AuthRepository) Register(username, passwordHash, email, name string, age int) error {
 	var exists bool
 	err := repo.db.Conn.Get(&exists, `SELECT EXISTS (SELECT 1 FROM users WHERE username = $1)`, username)
