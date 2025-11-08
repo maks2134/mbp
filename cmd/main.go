@@ -37,13 +37,9 @@ func main() {
 
 	api := app.Group("/api")
 
-	// Настройка Watermill для event-driven архитектуры
-	// КРИТИЧНО: В gochannel publisher и subscriber ДОЛЖНЫ быть одним и тем же экземпляром
 	logger := watermill.NewStdLogger(false, false)
 	pubsub := gochannel.NewGoChannel(gochannel.Config{}, logger)
 
-	// Используем один и тот же экземпляр как publisher и subscriber
-	// Это критично для работы gochannel - разные экземпляры не видят подписчиков друг друга
 	publisher := pubsub
 	subscriber := pubsub
 
@@ -65,17 +61,13 @@ func main() {
 	postsRoutes := posts.NewPostsRoutes(api, postsHandler, []byte(conf.JWT.SecretKey))
 	postsRoutes.Register()
 
-	// Запускаем consumer для синхронизации метрик из Redis в PostgreSQL
-	// КРИТИЧНО: запускаем ПЕРЕД стартом сервера и ждем полной инициализации
 	metricsConsumer := posts.NewMetricsSyncConsumer(postRepo, logger)
 	if err := metricsConsumer.StartConsumers(subscriber); err != nil {
 		log.Fatalf("Failed to start metrics consumers: %v", err)
 	}
 
-	// Даем дополнительное время для полной регистрации подписок в gochannel
-	// Принудительно переключаем контекст чтобы горутины точно запустились и достигли range
 	for i := 0; i < 20; i++ {
-		runtime.Gosched() // Даем горутинам время на запуск и достижение range
+		runtime.Gosched()
 	}
 	time.Sleep(500 * time.Millisecond)
 
