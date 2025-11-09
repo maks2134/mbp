@@ -7,6 +7,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type AWSConfig struct {
+	Region string
+	Bucket string
+}
+
 type JWTConfig struct {
 	SecretKey      string
 	AccessTokenTTL time.Duration
@@ -24,6 +29,7 @@ type Config struct {
 	Db    DbConfig
 	Redis RedisConfig
 	JWT   JWTConfig
+	AWS   AWSConfig
 }
 
 func LoadConfig() *Config {
@@ -51,6 +57,10 @@ func LoadConfig() *Config {
 		JWT: JWTConfig{
 			SecretKey:      os.Getenv("JWT_SECRET"),
 			AccessTokenTTL: ttl,
+		},
+		AWS: AWSConfig{
+			Region: os.Getenv("AWS_REGION"),
+			Bucket: os.Getenv("AWS_BUCKET"),
 		},
 	}
 }
