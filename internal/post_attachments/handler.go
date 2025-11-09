@@ -2,6 +2,8 @@ package post_attachments
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"mime/multipart"
 	"mpb/pkg/s3"
 	"strconv"
@@ -71,9 +73,26 @@ func (h *PostAttachmentsHandlers) UploadAttachments(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(uploaded)
 }
 
-func (h *PostAttachmentsHandlers) uploadToS3(ctx context.Context, file *multipart.FileHeader, postID int) (string, error) {
-	path := "posts/" + strconv.Itoa(postID)
-	return h.s3Client.UploadFile(ctx, file, path)
+func (h *PostAttachmentsHandlers) uploadToS3(ctx context.Context, fileHeader *multipart.FileHeader, postID int) (string, error) {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %w", err)
+	}
+	defer func(file multipart.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("failed to close file: %w", err)
+		}
+	}(file)
+
+	key := fmt.Sprintf("posts/%d/%s", postID, fileHeader.Filename)
+
+	url, err := h.s3Client.UploadFile(ctx, key, file, fileHeader.Header.Get("Content-Type"))
+	if err != nil {
+		return "", fmt.Errorf("failed to upload file to s3: %w", err)
+	}
+
+	return url, nil
 }
 
 // GetAttachments godoc

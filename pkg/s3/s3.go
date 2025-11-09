@@ -1,58 +1,63 @@
 package s3
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"log"
-	"mime/multipart"
-	"time"
+	"io"
+	"mpb/configs"
+	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type S3Client struct {
-	client *s3.Client
-	bucket string
+	client   *s3.Client
+	uploader *manager.Uploader
+	bucket   string
+	region   string
 }
 
-//func NewS3Client(ctx context.Context, bucket string) (*S3Client, error) {
-//	cfg, err := config.LoadDefaultConfig(ctx)
-//	if err != nil {
-//		panic("unable to load SDK config, " + err.Error())
-//	}
-//
-//	client := s3.NewFromConfig(cfg)
-//	return &S3Client{client: client, bucket: bucket}, nil
-//}
-
-func (s *S3Client) UploadFile(ctx context.Context, fileHeader *multipart.FileHeader, path string) (string, error) {
-	file, err := fileHeader.Open()
+func NewS3Client(conf *configs.Config) (*S3Client, error) {
+	cfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(conf.AWS.Region),
+	)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
-	defer func(file multipart.File) {
-		err := file.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(file)
+	client := s3.NewFromConfig(cfg)
+	uploader := manager.NewUploader(client)
 
-	uploader := manager.NewUploader(s.client)
+	return &S3Client{
+		client:   client,
+		uploader: uploader,
+		bucket:   conf.AWS.Bucket,
+		region:   conf.AWS.Region,
+	}, nil
+}
 
-	key := fmt.Sprintf("%s/%d_%s", path, time.Now().UnixNano(), fileHeader.Filename)
+func (s *S3Client) UploadFile(ctx context.Context, key string, file io.Reader, contentType string) (string, error) {
+	buf := new(bytes.Buffer)
+	if _, err := io.Copy(buf, file); err != nil {
+		return "", fmt.Errorf("failed to read file: %w", err)
+	}
 
-	result, err := uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
-		Body:   file,
-		ACL:    "public-read",
+	_, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(buf.Bytes()),
+		ContentType: aws.String(contentType),
+		ACL:         types.ObjectCannedACLPublicRead,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to upload file: %w", err)
+		return "", fmt.Errorf("failed to upload to S3: %w", err)
 	}
 
-	return result.Location, nil
+	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", s.bucket, s.region, url.PathEscape(key))
+	return url, nil
 }
