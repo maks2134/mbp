@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockPostsRepository is a mock implementation of PostsRepositoryInterface
 type MockPostsRepository struct {
 	mock.Mock
 }
@@ -21,7 +20,6 @@ type MockPostsRepository struct {
 func (m *MockPostsRepository) Save(ctx context.Context, post *Post) error {
 	args := m.Called(ctx, post)
 	if args.Get(0) != nil {
-		// Simulate setting ID and timestamps
 		post.ID = 1
 		post.CreatedAt = time.Now()
 		post.UpdatedAt = time.Now()
