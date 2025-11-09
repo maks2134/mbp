@@ -6,6 +6,8 @@ import (
 	"mpb/internal/comments"
 	"mpb/internal/post_attachments"
 	"mpb/internal/posts"
+	"mpb/internal/user_attachments"
+	"mpb/internal/users"
 	"mpb/pkg/db"
 	"mpb/pkg/redis"
 	"mpb/pkg/s3"
@@ -59,6 +61,20 @@ func RegisterModules(
 	commentHandler := comments.NewCommentsHandlers(commentService)
 	commentRoutes := comments.NewCommentsRoutes(api, commentHandler, []byte(conf.JWT.SecretKey))
 	commentRoutes.Register()
+
+	// users блок
+	usersRepo := users.NewUsersRepository(database)
+	usersService := users.NewUsersService(usersRepo, postRepo)
+	usersHandler := users.NewUsersHandlers(usersService)
+	usersRoutes := users.NewUsersRoutes(api, usersHandler)
+	usersRoutes.Register()
+
+	// user attachments блок
+	userAttachmentRepo := user_attachments.NewUserAttachmentsRepository(database)
+	userAttachmentService := user_attachments.NewUserAttachmentsService(userAttachmentRepo)
+	userAttachmentHandler := user_attachments.NewUserAttachmentsHandlers(userAttachmentService, s3Client)
+	userAttachmentRoutes := user_attachments.NewUserAttachmentsRoutes(api, userAttachmentHandler, []byte(conf.JWT.SecretKey))
+	userAttachmentRoutes.Register()
 
 	metricsConsumer := posts.NewMetricsSyncConsumer(postRepo, logger)
 	if err := metricsConsumer.StartConsumers(subscriber); err != nil {
