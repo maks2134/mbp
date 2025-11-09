@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -18,15 +17,15 @@ type S3Client struct {
 	bucket string
 }
 
-func NewS3Client(ctx context.Context, bucket string) (*S3Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
-	}
-
-	client := s3.NewFromConfig(cfg)
-	return &S3Client{client: client, bucket: bucket}, nil
-}
+//func NewS3Client(ctx context.Context, bucket string) (*S3Client, error) {
+//	cfg, err := config.LoadDefaultConfig(ctx)
+//	if err != nil {
+//		panic("unable to load SDK config, " + err.Error())
+//	}
+//
+//	client := s3.NewFromConfig(cfg)
+//	return &S3Client{client: client, bucket: bucket}, nil
+//}
 
 func (s *S3Client) UploadFile(ctx context.Context, fileHeader *multipart.FileHeader, path string) (string, error) {
 	file, err := fileHeader.Open()
