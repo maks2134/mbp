@@ -54,7 +54,6 @@ func (m *MockPostsRepository) List(ctx context.Context, f PostFilter) ([]Post, e
 	return args.Get(0).([]Post), args.Error(1)
 }
 
-// MockMetricsService is a mock implementation of MetricsService
 type MockMetricsService struct {
 	mock.Mock
 }
@@ -94,7 +93,6 @@ func (m *MockMetricsService) GetMetrics(ctx context.Context, postID int) (likes,
 	return args.Int(0), args.Int(1), args.Error(2)
 }
 
-// MockPublisher is a mock implementation of message.Publisher
 type MockPublisher struct {
 	mock.Mock
 }
@@ -109,7 +107,6 @@ func (m *MockPublisher) Close() error {
 	return args.Error(0)
 }
 
-// MockLogger is a mock implementation of watermill.LoggerAdapter
 type MockLogger struct{}
 
 func (m *MockLogger) Error(msg string, err error, fields watermill.LogFields) {}
@@ -180,11 +177,9 @@ func TestPostsService_CreatePost(t *testing.T) {
 
 			tt.mockSetup(repo, metrics, publisher)
 
-			// Note: In real implementation, MetricsService should be an interface
-			// For now, we'll use nil and test without metrics
 			service := &PostsService{
 				repo:           repo,
-				metricsService: nil, // Would be metrics if MetricsService was an interface
+				metricsService: nil,
 				publisher:      publisher,
 				logger:         logger,
 			}
@@ -218,7 +213,7 @@ func TestPostsService_GetPostByID(t *testing.T) {
 		postID        int
 		mockSetup     func(*MockPostsRepository, *MockMetricsService, *MockPublisher)
 		expectedError error
-		skip          bool // Skip test if metricsService is nil
+		skip          bool
 	}{
 		{
 			name:   "successful get post",
@@ -236,7 +231,7 @@ func TestPostsService_GetPostByID(t *testing.T) {
 				repo.On("FindByID", mock.Anything, 1).Return(post, nil)
 			},
 			expectedError: nil,
-			skip:          true, // Skip because GetPostByID requires metricsService
+			skip:          true,
 		},
 		{
 			name:   "post not found",
@@ -264,7 +259,7 @@ func TestPostsService_GetPostByID(t *testing.T) {
 
 			service := &PostsService{
 				repo:           repo,
-				metricsService: nil, // Would be metrics if MetricsService was an interface
+				metricsService: nil,
 				publisher:      publisher,
 				logger:         logger,
 			}
@@ -340,7 +335,7 @@ func TestPostsService_UpdatePost(t *testing.T) {
 			mockSetup: func(repo *MockPostsRepository, metrics *MockMetricsService, pub *MockPublisher) {
 				post := &Post{
 					ID:     1,
-					UserID: 1, // Different user
+					UserID: 1,
 				}
 				repo.On("FindByID", mock.Anything, 1).Return(post, nil)
 			},
@@ -357,11 +352,9 @@ func TestPostsService_UpdatePost(t *testing.T) {
 
 			tt.mockSetup(repo, metrics, publisher)
 
-			// Note: In real implementation, MetricsService should be an interface
-			// For now, we'll use nil and test without metrics
 			service := &PostsService{
 				repo:           repo,
-				metricsService: nil, // Would be metrics if MetricsService was an interface
+				metricsService: nil,
 				publisher:      publisher,
 				logger:         logger,
 			}
@@ -440,11 +433,9 @@ func TestPostsService_DeletePost(t *testing.T) {
 
 			tt.mockSetup(repo, metrics, publisher)
 
-			// Note: In real implementation, MetricsService should be an interface
-			// For now, we'll use nil and test without metrics
 			service := &PostsService{
 				repo:           repo,
-				metricsService: nil, // Would be metrics if MetricsService was an interface
+				metricsService: nil,
 				publisher:      publisher,
 				logger:         logger,
 			}
@@ -470,7 +461,7 @@ func TestPostsService_ListPosts(t *testing.T) {
 		mockSetup     func(*MockPostsRepository, *MockMetricsService, *MockPublisher)
 		expectedCount int
 		expectedError error
-		skip          bool // Skip test if metricsService is nil
+		skip          bool
 	}{
 		{
 			name:   "successful list",
@@ -486,7 +477,7 @@ func TestPostsService_ListPosts(t *testing.T) {
 			},
 			expectedCount: 2,
 			expectedError: nil,
-			skip:          true, // Skip because ListPosts requires metricsService
+			skip:          true,
 		},
 		{
 			name:   "empty list",
@@ -496,7 +487,7 @@ func TestPostsService_ListPosts(t *testing.T) {
 			},
 			expectedCount: 0,
 			expectedError: nil,
-			skip:          true, // Skip because ListPosts requires metricsService
+			skip:          true,
 		},
 		{
 			name:   "repository error",
@@ -506,7 +497,7 @@ func TestPostsService_ListPosts(t *testing.T) {
 			},
 			expectedCount: 0,
 			expectedError: errors.New("failed to list posts: db error"),
-			skip:          false, // This test fails before metricsService is called
+			skip:          false,
 		},
 	}
 
@@ -525,7 +516,7 @@ func TestPostsService_ListPosts(t *testing.T) {
 
 			service := &PostsService{
 				repo:           repo,
-				metricsService: nil, // Would be metrics if MetricsService was an interface
+				metricsService: nil,
 				publisher:      publisher,
 				logger:         logger,
 			}
