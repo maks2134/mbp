@@ -21,7 +21,7 @@ func NewAuthService(repo *AuthRepository, jwtKey []byte, ttl time.Duration) *Aut
 		repo:       repo,
 		jwtKey:     jwtKey,
 		tokenTTL:   ttl,
-		refreshTTL: 7 * 24 * time.Hour, // Refresh живёт неделю
+		refreshTTL: 7 * 24 * time.Hour,
 	}
 }
 
@@ -53,7 +53,6 @@ func (s *AuthService) Login(username, password string) (*dto.LoginResponse, erro
 		return nil, err
 	}
 
-	// Сохраняем refresh токен в Redis
 	if err := s.repo.SetRefreshToken(user.ID, refreshToken, s.refreshTTL); err != nil {
 		return nil, err
 	}
@@ -66,7 +65,6 @@ func (s *AuthService) Login(username, password string) (*dto.LoginResponse, erro
 }
 
 func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error) {
-	// Парсим refresh токен
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		return s.jwtKey, nil
 	})
@@ -85,13 +83,11 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error)
 	}
 	userID := int(userIDFloat)
 
-	// Проверяем токен в Redis
 	storedToken, err := s.repo.GetRefreshToken(userID)
 	if err != nil || storedToken != refreshToken {
 		return nil, errors.New("refresh token not found or expired")
 	}
 
-	// Генерируем новые токены
 	newAccess, err := s.generateAccessToken(userID, claims["username"].(string))
 	if err != nil {
 		return nil, err
@@ -102,7 +98,6 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error)
 		return nil, err
 	}
 
-	// Обновляем токен в Redis
 	if err := s.repo.SetRefreshToken(userID, newRefresh, s.refreshTTL); err != nil {
 		return nil, err
 	}
