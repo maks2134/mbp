@@ -6,6 +6,7 @@ import (
 	"mpb/internal/comments"
 	"mpb/internal/post_attachments"
 	"mpb/internal/posts"
+	"mpb/internal/stories"
 	"mpb/internal/user_attachments"
 	"mpb/internal/users"
 	"mpb/pkg/db"
@@ -75,6 +76,13 @@ func RegisterModules(
 	userAttachmentHandler := user_attachments.NewUserAttachmentsHandlers(userAttachmentService, s3Client)
 	userAttachmentRoutes := user_attachments.NewUserAttachmentsRoutes(api, userAttachmentHandler, []byte(conf.JWT.SecretKey))
 	userAttachmentRoutes.Register()
+
+	// stories блок
+	storiesRepo := stories.NewStoriesRepository(database)
+	storiesService := stories.NewStoriesService(storiesRepo)
+	storiesHandler := stories.NewStoriesHandlers(storiesService, s3Client)
+	storiesRoutes := stories.NewStoriesRoutes(api, storiesHandler, []byte(conf.JWT.SecretKey))
+	storiesRoutes.Register()
 
 	metricsConsumer := posts.NewMetricsSyncConsumer(postRepo, logger)
 	if err := metricsConsumer.StartConsumers(subscriber); err != nil {

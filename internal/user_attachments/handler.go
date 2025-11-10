@@ -146,7 +146,6 @@ func (h *UserAttachmentsHandlers) DeleteAttachment(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid attachment id"})
 	}
 
-	// Check if user is authorized
 	userID, ok := c.Locals("user_id").(int)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not authenticated"})
