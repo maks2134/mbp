@@ -31,8 +31,8 @@ func NewStoriesHandlers(service *StoriesService, s3Client *s3.S3Client) *Stories
 // @Produce json
 // @Param file formData file true "Story file (image or video)"
 // @Success 201 {object} dto.StoryResponse
-// @Failure 400 {object} fiber.Map
-// @Failure 401 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
 // @Router /api/stories [post]
 func (h *StoriesHandlers) CreateStory(c *fiber.Ctx) error {
 	userID, ok := c.Locals("user_id").(int)
@@ -99,7 +99,7 @@ func (h *StoriesHandlers) uploadToS3(ctx context.Context, fileHeader *multipart.
 // @Produce json
 // @Param id path int true "Story ID"
 // @Success 200 {object} dto.StoryResponse
-// @Failure 404 {object} fiber.Map
+// @Failure 404 {object} map[string]interface{}
 // @Router /api/stories/{id} [get]
 func (h *StoriesHandlers) GetStory(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
@@ -128,8 +128,8 @@ func (h *StoriesHandlers) GetStory(c *fiber.Ctx) error {
 // @Summary Mark story as viewed
 // @Tags Stories
 // @Param id path int true "Story ID"
-// @Success 200 {object} fiber.Map
-// @Failure 404 {object} fiber.Map
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
 // @Router /api/stories/{id}/view [post]
 func (h *StoriesHandlers) ViewStory(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
@@ -226,7 +226,7 @@ func (h *StoriesHandlers) ListActiveStories(c *fiber.Ctx) error {
 // @Tags Stories
 // @Param id path int true "Story ID"
 // @Success 204
-// @Failure 404 {object} fiber.Map
+// @Failure 404 {object} map[string]interface{}
 // @Router /api/stories/{id} [delete]
 func (h *StoriesHandlers) DeleteStory(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))

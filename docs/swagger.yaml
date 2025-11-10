@@ -1,5 +1,38 @@
 basePath: /api
 definitions:
+  dto.CommentResponse:
+    properties:
+      blocked:
+        type: boolean
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: integer
+      like:
+        type: integer
+      post_id:
+        type: integer
+      text:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  dto.CreateCommentRequest:
+    properties:
+      post_id:
+        type: integer
+      text:
+        maxLength: 500
+        minLength: 1
+        type: string
+    required:
+    - post_id
+    - text
+    type: object
   dto.CreatePostRequest:
     properties:
       description:
@@ -18,8 +51,12 @@ definitions:
     type: object
   dto.LoginRequest:
     properties:
+      access_token:
+        type: string
       password:
         minLength: 6
+        type: string
+      refresh_token:
         type: string
       username:
         minLength: 3
@@ -30,6 +67,8 @@ definitions:
     type: object
   dto.LoginResponse:
     properties:
+      refresh_token:
+        type: string
       token:
         type: string
       user:
@@ -56,6 +95,20 @@ definitions:
       user_id:
         type: integer
     type: object
+  dto.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
   dto.RegisterRequest:
     properties:
       age:
@@ -81,6 +134,32 @@ definitions:
     - password
     - username
     type: object
+  dto.StoryResponse:
+    properties:
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      file_type:
+        type: string
+      file_url:
+        type: string
+      id:
+        type: integer
+      is_viewed:
+        type: boolean
+      user_id:
+        type: integer
+      views_count:
+        type: integer
+    type: object
+  dto.UpdateCommentRequest:
+    properties:
+      text:
+        maxLength: 500
+        minLength: 1
+        type: string
+    type: object
   dto.UpdatePostRequest:
     properties:
       description:
@@ -93,6 +172,46 @@ definitions:
         maxLength: 200
         minLength: 3
         type: string
+    type: object
+  dto.UserProfileResponse:
+    properties:
+      age:
+        type: integer
+      attachments_count:
+        type: integer
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      posts_count:
+        type: integer
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  post_attachments.PostAttachment:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      file_size:
+        type: integer
+      file_type:
+        type: string
+      file_url:
+        type: string
+      id:
+        type: integer
+      post_id:
+        type: integer
     type: object
   user.User:
     properties:
@@ -116,6 +235,23 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  user_attachments.UserAttachment:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      file_size:
+        type: integer
+      file_type:
+        type: string
+      file_url:
+        type: string
+      id:
+        type: integer
+      user_id:
+        type: integer
     type: object
 host: localhost:8000
 info:
@@ -152,6 +288,34 @@ paths:
       summary: Login user
       tags:
       - Auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access and refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RefreshResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh tokens
+      tags:
+      - Auth
   /api/auth/register:
     post:
       consumes:
@@ -182,6 +346,138 @@ paths:
       summary: Register user
       tags:
       - Auth
+  /api/comments:
+    get:
+      parameters:
+      - description: Post ID
+        in: query
+        name: post_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CommentResponse'
+            type: array
+      summary: List all comments for post
+      tags:
+      - Comments
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Comment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CommentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create new comment
+      tags:
+      - Comments
+  /api/comments/{id}:
+    delete:
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete comment
+      tags:
+      - Comments
+    get:
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommentResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get comment by ID
+      tags:
+      - Comments
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated comment
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommentResponse'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update comment
+      tags:
+      - Comments
   /api/posts:
     get:
       produces:
@@ -342,4 +638,382 @@ paths:
       summary: Unlike a post
       tags:
       - Posts
+  /api/stories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.StoryResponse'
+            type: array
+      summary: Get all active stories
+      tags:
+      - Stories
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Story file (image or video)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.StoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new story
+      tags:
+      - Stories
+  /api/stories/{id}:
+    delete:
+      parameters:
+      - description: Story ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a story
+      tags:
+      - Stories
+    get:
+      parameters:
+      - description: Story ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.StoryResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get story by ID
+      tags:
+      - Stories
+  /api/stories/{id}/view:
+    post:
+      parameters:
+      - description: Story ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mark story as viewed
+      tags:
+      - Stories
+  /api/stories/user/{id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.StoryResponse'
+            type: array
+      summary: Get stories by user ID
+      tags:
+      - Stories
+  /api/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserProfileResponse'
+            type: array
+      summary: List all users
+      tags:
+      - Users
+  /api/users/{id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserProfileResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user profile by ID
+      tags:
+      - Users
+  /api/users/{id}/posts:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PostResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get posts by user ID
+      tags:
+      - Users
+  /posts/{id}/attachments:
+    get:
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/post_attachments.PostAttachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get attachments for a post
+      tags:
+      - PostAttachments
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Files to upload
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/post_attachments.PostAttachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload attachments for a post
+      tags:
+      - PostAttachments
+  /posts/attachments/{id}:
+    delete:
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a post attachment
+      tags:
+      - PostAttachments
+  /users/{id}/attachments:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/user_attachments.UserAttachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get attachments for a user
+      tags:
+      - UserAttachments
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Files to upload
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/user_attachments.UserAttachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload attachments for a user profile
+      tags:
+      - UserAttachments
+  /users/attachments/{id}:
+    delete:
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a user attachment
+      tags:
+      - UserAttachments
 swagger: "2.0"
