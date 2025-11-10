@@ -3,8 +3,8 @@ package users
 import (
 	"errors"
 	"mpb/internal/posts"
-	postsdto "mpb/internal/posts/dto"
-	"mpb/internal/users/dto"
+	"mpb/internal/posts/dto"
+	usersdto "mpb/internal/users/dto"
 	"mpb/pkg/errors_constant"
 	"strconv"
 
@@ -25,7 +25,7 @@ func NewUsersHandlers(service *UsersService) *UsersHandlers {
 // @Produce json
 // @Param id path int true "User ID"
 // @Success 200 {object} dto.UserProfileResponse
-// @Failure 404 {object} fiber.Map
+// @Failure 404 {object} map[string]interface{}
 // @Router /api/users/{id} [get]
 func (h *UsersHandlers) GetUserProfile(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
@@ -50,8 +50,8 @@ func (h *UsersHandlers) GetUserProfile(c *fiber.Ctx) error {
 // @Tags Users
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 {array} posts.dto.PostResponse
-// @Failure 404 {object} fiber.Map
+// @Success 200 {array} dto.PostResponse
+// @Failure 404 {object} map[string]interface{}
 // @Router /api/users/{id}/posts [get]
 func (h *UsersHandlers) GetUserPosts(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
@@ -71,7 +71,7 @@ func (h *UsersHandlers) GetUserPosts(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	response := make([]postsdto.PostResponse, len(userPosts))
+	response := make([]dto.PostResponse, len(userPosts))
 	for i := range userPosts {
 		response[i] = convertPostToDTO(&userPosts[i])
 	}
@@ -95,12 +95,12 @@ func (h *UsersHandlers) ListUsers(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	response := make([]dto.UserProfileResponse, len(users))
+	response := make([]usersdto.UserProfileResponse, len(users))
 	for i, u := range users {
 		postsCount, _ := h.service.repo.GetPostsCount(c.Context(), u.ID)
 		attachmentsCount, _ := h.service.repo.GetAttachmentsCount(c.Context(), u.ID)
 
-		response[i] = dto.UserProfileResponse{
+		response[i] = usersdto.UserProfileResponse{
 			ID:               u.ID,
 			Name:             u.Name,
 			Username:         u.Username,
@@ -117,8 +117,8 @@ func (h *UsersHandlers) ListUsers(c *fiber.Ctx) error {
 	return c.JSON(response)
 }
 
-func profileToResponse(profile *UserProfile) dto.UserProfileResponse {
-	return dto.UserProfileResponse{
+func profileToResponse(profile *UserProfile) usersdto.UserProfileResponse {
+	return usersdto.UserProfileResponse{
 		ID:               profile.ID,
 		Name:             profile.Name,
 		Username:         profile.Username,
@@ -132,8 +132,8 @@ func profileToResponse(profile *UserProfile) dto.UserProfileResponse {
 	}
 }
 
-func convertPostToDTO(post *posts.Post) postsdto.PostResponse {
-	return postsdto.PostResponse{
+func convertPostToDTO(post *posts.Post) dto.PostResponse {
+	return dto.PostResponse{
 		ID:           post.ID,
 		UserID:       post.UserID,
 		Title:        post.Title,

@@ -26,10 +26,10 @@ func NewPostAttachmentsHandlers(service *PostAttachmentsService, s3Client *s3.S3
 // @Accept multipart/form-data
 // @Produce json
 // @Param id path int true "Post ID"
-// @Param files formData file true "Files to upload" collectionFormat(multi)
+// @Param files formData file true "Files to upload"
 // @Success 201 {array} PostAttachment
-// @Failure 400 {object} fiber.Map
-// @Failure 500 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /posts/{id}/attachments [post]
 func (h *PostAttachmentsHandlers) UploadAttachments(c *fiber.Ctx) error {
 	postID, err := strconv.Atoi(c.Params("id"))
@@ -101,8 +101,8 @@ func (h *PostAttachmentsHandlers) uploadToS3(ctx context.Context, fileHeader *mu
 // @Produce json
 // @Param id path int true "Post ID"
 // @Success 200 {array} PostAttachment
-// @Failure 400 {object} fiber.Map
-// @Failure 500 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /posts/{id}/attachments [get]
 func (h *PostAttachmentsHandlers) GetAttachments(c *fiber.Ctx) error {
 	postID, err := strconv.Atoi(c.Params("id"))
@@ -123,8 +123,8 @@ func (h *PostAttachmentsHandlers) GetAttachments(c *fiber.Ctx) error {
 // @Tags PostAttachments
 // @Param id path int true "Attachment ID"
 // @Success 204
-// @Failure 400 {object} fiber.Map
-// @Failure 500 {object} fiber.Map
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /posts/attachments/{id} [delete]
 func (h *PostAttachmentsHandlers) DeleteAttachment(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
