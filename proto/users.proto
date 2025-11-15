@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package users;
+
+option go_package = "mpb/proto/users";
+
+import "common.proto";
+
+service UsersService {
+  rpc GetUserProfile(GetUserProfileRequest) returns (UserProfileResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc GetUser(GetUserRequest) returns (UserResponse);
+}
+
+message User {
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+  string name = 4;
+  int32 age = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message UserProfile {
+  User user = 1;
+  int32 posts_count = 2;
+  int32 attachments_count = 3;
+}
+
+message GetUserProfileRequest {
+  int32 user_id = 1;
+}
+
+message UpdateUserProfileRequest {
+  int32 user_id = 1;
+  optional string name = 2;
+  optional int32 age = 3;
+}
+
+message ListUsersRequest {
+  optional string username = 1;
+  common.Pagination pagination = 2;
+}
+
+message GetUserRequest {
+  int32 user_id = 1;
+}
+
+message UserProfileResponse {
+  UserProfile profile = 1;
+}
+
+message UserResponse {
+  User user = 1;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  int32 total = 2;
+}
+
