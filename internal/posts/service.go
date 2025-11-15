@@ -150,3 +150,40 @@ func (s *PostsService) ListPosts(ctx context.Context, f PostFilter) ([]Post, err
 
 	return posts, nil
 }
+
+// LikePost ставит лайк посту и возвращает статус и общее количество лайков
+func (s *PostsService) LikePost(ctx context.Context, postID, userID int) (bool, int, error) {
+	// Проверяем, существует ли пост
+	_, err := s.repo.FindByID(ctx, postID)
+	if err != nil {
+		return false, 0, errors_constant.PostNotFound
+	}
+
+	// Пытаемся поставить лайк
+	err = s.metricsService.LikePost(ctx, userID, postID)
+	if err != nil {
+		// Если пользователь уже лайкнул, возвращаем текущее количество лайков
+		if err.Error() == "user already liked this post" {
+			likes, _ := s.metricsService.GetLikes(ctx, postID)
+			return true, likes, nil
+		}
+		return false, 0, err
+	}
+
+	likes, err := s.metricsService.GetLikes(ctx, postID)
+	if err != nil {
+		return true, 0, err
+	}
+
+	return true, likes, nil
+}
+
+// IncrementViews увеличивает счетчик просмотров
+func (s *PostsService) IncrementViews(ctx context.Context, postID int) error {
+	return s.metricsService.IncrementViews(ctx, postID)
+}
+
+// GetMetrics возвращает метрики поста (лайки и просмотры)
+func (s *PostsService) GetMetrics(ctx context.Context, postID int) (int, int, error) {
+	return s.metricsService.GetMetrics(ctx, postID)
+}
