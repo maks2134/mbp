@@ -67,6 +67,29 @@ deps: ## Download and verify dependencies
 swagger: ## Generate swagger documentation
 	@swag init -g cmd/main.go
 
+proto: ## Generate Go code from proto files
+	@echo "Generating proto files..."
+	@mkdir -p proto/common proto/posts proto/stories proto/users
+	@cd proto && protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		--proto_path=. common.proto && \
+		protoc --go_out=posts --go_opt=paths=source_relative \
+		--go-grpc_out=posts --go-grpc_opt=paths=source_relative \
+		--proto_path=. posts.proto && \
+		protoc --go_out=stories --go_opt=paths=source_relative \
+		--go-grpc_out=stories --go-grpc_opt=paths=source_relative \
+		--proto_path=. stories.proto && \
+		protoc --go_out=users --go_opt=paths=source_relative \
+		--go-grpc_out=users --go-grpc_opt=paths=source_relative \
+		--proto_path=. users.proto
+	@echo "Proto files generated successfully"
+
+proto-install: ## Install protoc and plugins
+	@echo "Installing protoc..."
+	@brew install protobuf || echo "protoc already installed or use: apt-get install protobuf-compiler"
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
 dev: docker-up ## Start development environment
 	@echo "Waiting for database..."
 	@sleep 5

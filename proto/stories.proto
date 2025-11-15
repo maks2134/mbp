@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package stories;
+
+option go_package = "mpb/proto/stories";
+
+import "common.proto";
+
+service StoriesService {
+  rpc CreateStory(CreateStoryRequest) returns (StoryResponse);
+  rpc GetStory(GetStoryRequest) returns (StoryResponse);
+  rpc ListStories(ListStoriesRequest) returns (ListStoriesResponse);
+  rpc DeleteStory(DeleteStoryRequest) returns (common.Empty);
+}
+
+message Story {
+  int32 id = 1;
+  int32 user_id = 2;
+  string media_url = 3;
+  string created_at = 4;
+  string expires_at = 5;
+}
+
+message CreateStoryRequest {
+  int32 user_id = 1;
+  string media_url = 2;
+}
+
+message GetStoryRequest {
+  int32 story_id = 1;
+}
+
+message ListStoriesRequest {
+  optional int32 user_id = 1;
+  common.Pagination pagination = 2;
+}
+
+message DeleteStoryRequest {
+  int32 story_id = 1;
+  int32 user_id = 2;
+}
+
+message StoryResponse {
+  Story story = 1;
+}
+
+message ListStoriesResponse {
+  repeated Story stories = 1;
+  int32 total = 2;
+}
+

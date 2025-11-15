@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package posts;
+
+option go_package = "mpb/proto/posts";
+
+import "common.proto";
+
+service PostsService {
+  rpc CreatePost(CreatePostRequest) returns (PostResponse);
+  rpc GetPost(GetPostRequest) returns (PostResponse);
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+  rpc UpdatePost(UpdatePostRequest) returns (PostResponse);
+  rpc DeletePost(DeletePostRequest) returns (common.Empty);
+  rpc LikePost(LikePostRequest) returns (LikePostResponse);
+  rpc ViewPost(ViewPostRequest) returns (common.Empty);
+  rpc GetPostMetrics(GetPostMetricsRequest) returns (PostMetricsResponse);
+}
+
+service CommentsService {
+  rpc CreateComment(CreateCommentRequest) returns (CommentResponse);
+  rpc GetComment(GetCommentRequest) returns (CommentResponse);
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc UpdateComment(UpdateCommentRequest) returns (CommentResponse);
+  rpc DeleteComment(DeleteCommentRequest) returns (common.Empty);
+}
+
+message Post {
+  int32 id = 1;
+  int32 user_id = 2;
+  string title = 3;
+  string description = 4;
+  string tag = 5;
+  int32 likes = 6;
+  int32 views = 7;
+  bool is_active = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message CreatePostRequest {
+  int32 user_id = 1;
+  string title = 2;
+  string description = 3;
+  string tag = 4;
+}
+
+message GetPostRequest {
+  int32 post_id = 1;
+}
+
+message ListPostsRequest {
+  optional int32 user_id = 1;
+  optional string tag = 2;
+  bool only_active = 3;
+  common.Pagination pagination = 4;
+}
+
+message UpdatePostRequest {
+  int32 post_id = 1;
+  int32 user_id = 2;
+  optional string title = 3;
+  optional string description = 4;
+  optional string tag = 5;
+}
+
+message DeletePostRequest {
+  int32 post_id = 1;
+  int32 user_id = 2;
+}
+
+message LikePostRequest {
+  int32 post_id = 1;
+  int32 user_id = 2;
+}
+
+message LikePostResponse {
+  bool liked = 1;
+  int32 total_likes = 2;
+}
+
+message ViewPostRequest {
+  int32 post_id = 1;
+}
+
+message GetPostMetricsRequest {
+  int32 post_id = 1;
+}
+
+message PostMetricsResponse {
+  int32 likes = 1;
+  int32 views = 2;
+}
+
+message PostResponse {
+  Post post = 1;
+}
+
+message ListPostsResponse {
+  repeated Post posts = 1;
+  int32 total = 2;
+}
+
+// Comment messages
+message Comment {
+  int32 id = 1;
+  int32 post_id = 2;
+  int32 user_id = 3;
+  string content = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message CreateCommentRequest {
+  int32 post_id = 1;
+  int32 user_id = 2;
+  string content = 3;
+}
+
+message GetCommentRequest {
+  int32 comment_id = 1;
+}
+
+message ListCommentsRequest {
+  int32 post_id = 1;
+  common.Pagination pagination = 2;
+}
+
+message UpdateCommentRequest {
+  int32 comment_id = 1;
+  int32 user_id = 2;
+  string content = 3;
+}
+
+message DeleteCommentRequest {
+  int32 comment_id = 1;
+  int32 user_id = 2;
+}
+
+message CommentResponse {
+  Comment comment = 1;
+}
+
+message ListCommentsResponse {
+  repeated Comment comments = 1;
+  int32 total = 2;
+}
+

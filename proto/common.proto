@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "mpb/proto/common";
+
+message Error {
+  string message = 1;
+  string code = 2;
+}
+
+message Empty {}
+
+message Pagination {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+

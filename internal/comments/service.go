@@ -99,6 +99,19 @@ func (s *CommentsService) ListComments(ctx context.Context, postID int) ([]Comme
 	return comments, nil
 }
 
+func (s *CommentsService) GetCommentByID(ctx context.Context, commentID int) (*Comment, error) {
+	comment, err := s.repo.FindCommentByID(ctx, commentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find comment: %w", err)
+	}
+
+	if comment.DeletedAt != nil {
+		return nil, errors_constant.CommentDeleted
+	}
+
+	return comment, nil
+}
+
 func (s *CommentsService) LikeComment(ctx context.Context, userID, commentID int) (*Comment, error) {
 	comment, err := s.repo.FindCommentByID(ctx, commentID)
 	if err != nil {
