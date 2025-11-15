@@ -19,6 +19,66 @@ services:
     networks:
       - mpb_network
 
+  postgres-posts:
+    container_name: postgres-posts
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: mpb
+      POSTGRES_PASSWORD: mpb_pas
+      POSTGRES_DB: posts_db
+      PGDATA: /data/postgres_posts
+    volumes:
+      - ./postgres-data-posts:/data/postgres
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mpb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mpb_network
+
+  postgres-stories:
+    container_name: postgres-stories
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: mpb
+      POSTGRES_PASSWORD: mpb_pas
+      POSTGRES_DB: stories_db
+      PGDATA: /data/postgres_stories
+    volumes:
+      - ./postgres-data-stories:/data/postgres
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mpb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mpb_network
+
+  postgres-users:
+    container_name: postgres-users
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: mpb
+      POSTGRES_PASSWORD: mpb_pas
+      POSTGRES_DB: users_db
+      PGDATA: /data/postgres_users
+    volumes:
+      - ./postgres-data-users:/data/postgres
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mpb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mpb_network
+
   redis:
     container_name: redis-mpb
     image: redis:7-alpine
@@ -33,6 +93,39 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - mpb_network
+
+  zookeeper:
+    container_name: zookeeper-mpb
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - mpb_network
+
+  kafka:
+    container_name: kafka-mpb
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - mpb_network
 
@@ -73,6 +166,83 @@ services:
     restart: "no"
     networks:
       - mpb_network
+
+  # Microservices (uncomment when ready)
+  # posts-service:
+  #   build:
+  #     context: .
+  #     dockerfile: services/posts-service/Dockerfile
+  #   container_name: posts-service
+  #   ports:
+  #     - "50051:50051"
+  #   environment:
+  #     DSN: postgres://mpb:mpb_pas@postgres-posts:5432/posts_db?sslmode=disable
+  #     REDIS_ADDR: redis:6379
+  #     KAFKA_BROKERS: kafka:29092
+  #   depends_on:
+  #     postgres-posts:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - mpb_network
+
+  # stories-service:
+  #   build:
+  #     context: .
+  #     dockerfile: services/stories-service/Dockerfile
+  #   container_name: stories-service
+  #   ports:
+  #     - "50052:50052"
+  #   environment:
+  #     DSN: postgres://mpb:mpb_pas@postgres-stories:5432/stories_db?sslmode=disable
+  #     KAFKA_BROKERS: kafka:29092
+  #   depends_on:
+  #     postgres-stories:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - mpb_network
+
+  # user-service:
+  #   build:
+  #     context: .
+  #     dockerfile: services/user-service/Dockerfile
+  #   container_name: user-service
+  #   ports:
+  #     - "50053:50053"
+  #   environment:
+  #     DSN: postgres://mpb:mpb_pas@postgres-users:5432/users_db?sslmode=disable
+  #     KAFKA_BROKERS: kafka:29092
+  #   depends_on:
+  #     postgres-users:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - mpb_network
+
+  # api-gateway:
+  #   build:
+  #     context: .
+  #     dockerfile: services/api-gateway/Dockerfile
+  #   container_name: api-gateway
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     POSTS_SERVICE_ADDR: posts-service:50051
+  #     STORIES_SERVICE_ADDR: stories-service:50052
+  #     USER_SERVICE_ADDR: user-service:50053
+  #     JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+  #   depends_on:
+  #     - posts-service
+  #     - stories-service
+  #     - user-service
+  #   networks:
+  #     - mpb_network
 
 networks:
   mpb_network:
