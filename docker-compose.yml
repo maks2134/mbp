@@ -167,7 +167,6 @@ services:
     networks:
       - mpb_network
 
-  # Microservices (uncomment when ready)
   # posts-service:
   #   build:
   #     context: .
